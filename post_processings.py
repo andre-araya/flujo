@@ -43,8 +43,8 @@ class time_steps():
 # ============================================================================
 
 #Number of frames calculation
-os.system("ls ../results/images/  | wc -l > num_frames.txt")
-file = open("./num_frames.txt", 'r')
+os.system("ls ../results/images_mog2_2(0.01)/  | wc -l > num_frames.txt")
+file = open("../results/num_frames.txt", 'r')
 contents = file.read()
 file.close()
 num_frames = contents.split('\n')

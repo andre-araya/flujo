@@ -19,17 +19,21 @@ from tracker import VehicleCounter
 #point3 = (1123,1080)
 
 
-point1 = (900,115) 
-point2 = (1000,110)
-point3 = (1050,460)  
-point4 = (1370,430)
+point1 = (1100,100) 
+point2 = (370,900)
+point3 = (1102,102)  
+point4 = (372,902)
 pointA = (229,218)
 pointB = (433,225)
 
 
-m_line = (point4[0]-point3[0])/(point4[1]-point3[1])
-b_line = point4[0]-m_line*point4[1]
-
+m1 = (point2[0]-point1[0])/(point2[1]-point1[1])
+b1 = point2[0]-m1*point2[1]
+m2 = (point4[0]-point3[0])/(point4[1]-point3[1])
+b2 = point4[0]-m2*point4[1]
+#for i in range(point1[1],point4[1]):
+#    print i, m1*i+b1, i, m2*i+b2
+    
 
 # ============================================================================
 
@@ -86,24 +90,25 @@ def save_frame(file_name_format, frame_number, frame, label_format):
 def filter_mask(fg_mask):
     opening, closing, dilatation = None, None, None
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    for i in range(3):
-    # Remove noise
-        opening = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel, iterations = 4)
-    # Dilate to merge adjacent blobs
-        dilation = cv2.dilate(opening, kernel, iterations = 15)
+    for i in range(1):
     # Fill any small holes
-        closing = cv2.morphologyEx(dilation, cv2.MORPH_CLOSE, kernel, iterations = 12)
+        closing = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel, iterations = 3)
+    # Dilate to merge adjacent blobs
+        dilation = cv2.dilate(closing, kernel, iterations = 3)
+    # Remove noise
+        opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel, iterations = 6)
 
-    return closing
+    return opening
 
 # ============================================================================
 
 def detect_vehicles(fg_mask):
     log = logging.getLogger("detect_vehicles")
 
-    MIN_CONTOUR_WIDTH = 50
-    MIN_CONTOUR_HEIGHT = 50
-
+    MIN_CONTOUR_WIDTH = 40
+    MIN_CONTOUR_HEIGHT = 40
+    MAX_CONTOUR_WIDTH = 150
+    MAX_CONTOUR_HEIGHT = 150
     # Finding the contours of any vehicles in the image
     contours, hierarchy = cv2.findContours(fg_mask #modified _,
         , cv2.RETR_EXTERNAL
@@ -115,8 +120,22 @@ def detect_vehicles(fg_mask):
         (x, y, w, h) = cv2.boundingRect(contour)
         #x_max = m_line*y + b_line # Trapezoid edge
         condition1 = (w >= MIN_CONTOUR_WIDTH) and (h >= MIN_CONTOUR_HEIGHT)
-        condition2 = y + h/2 > point1[1] and y + h/2 < point4[1] and x > point1[0] and x < point4[0]
-        contour_valid = condition1 and condition2
+        condition2 = (w <= MAX_CONTOUR_WIDTH) and (h <= MAX_CONTOUR_HEIGHT) 
+        condition3 = False
+        for i in range(point1[1],point2[1]):
+            if i > y  and  x < m2*i+b2:
+                condition3 = True
+                break
+            else:
+                pass
+        condition4 = False
+        for i in range(point3[1],point4[1]):
+            if i < y  and  x > m1*i+b1:
+                condition4 = True
+                break
+            else:
+                pass
+        contour_valid = condition1 and condition2 and condition3 and condition4
 
         if not contour_valid:
             continue
@@ -154,31 +173,31 @@ def process_frame(frame_number, frame_counter, frame, bg_subtractor, car_counter
 
     # Removing the background
     fg_mask = bg_subtractor.apply(frame, None, 0.01)
-    fg_mask = filter_mask(fg_mask)
+    #fg_mask = filter_mask(fg_mask)
 
 
     # Saving filtered frames
-    #if frame_number > 100*frame_counter and frame_number < 100*(frame_counter+1):
-     #   save_frame(IMAGE_DIR + "/mask_%04d.png"
-     #   , frame_number, fg_mask, "foreground mask for frame #%d")
+#    if frame_number > 50 + 100*frame_counter and frame_number < 100*(frame_counter+2):
+#        save_frame(IMAGE_DIR + "/mask_%04d.png"
+#        , frame_number, fg_mask, "foreground mask for frame #%d")
 
 
    # Detecting Vehicle contours and  centroids
-    matches = detect_vehicles(fg_mask)
+    if frame_number > 50:
+        matches = detect_vehicles(fg_mask)
 
    
-    # Marking the bounding box and the centroid on the processed frame 
-    for (i, match) in enumerate(matches):
-        contour, centroid = match
-        x, y, w, h = contour 
+    # Marking the bounding box and the centroid on the processed frame
+        for (i, match) in enumerate(matches):
+            contour, centroid = match
+            x, y, w, h = contour 
 
-        cv2.rectangle(processed, (x, y), (x + w - 1, y + h - 1),
-        BOUNDING_BOX_COLOUR, 1)
-        cv2.circle(processed, centroid, 2, CENTROID_COLOUR, -1)
-
+            cv2.rectangle(processed, (x, y), (x + w - 1, y + h - 1),
+            BOUNDING_BOX_COLOUR, 1)
+            cv2.circle(processed, centroid, 2, CENTROID_COLOUR, -1)
 
     #Updating vehicle count
-    car_counter.update_count(matches, frame_number, processed)
+        car_counter.update_count(matches, frame_number, processed)
 
     return processed
 

@@ -14,7 +14,7 @@ from tracker import VehicleCounter, PathWay
 # ============================================================================
 
 # O/I Videos
-INPUT_VIDEO_NAME = "../Lanamme/Videos/100GOPRO/033651.ogv" #Sample_Videos/pretil.mp4" # Video file
+INPUT_VIDEO_NAME = "../video/output.ogv" #Sample_Videos/pretil.mp4" # Video file
 OUTPUT_VIDEO_NAME = "../results/Output.avi"
 
 #Video Capturing
@@ -24,11 +24,11 @@ frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
 fps = cap.get(cv2.CAP_PROP_FPS)
 
-print cap.get(cv2.CAP_PROP_FRAME_COUNT)
+#print cap.get(cv2.CAP_PROP_FRAME_COUNT)
 #Car-free image for background subtractor Pre-training 
-CAR_FREE_IMAGE = "../Car_Free_Images/dummy_GP033650.png" #modified from left_lane_#
+CAR_FREE_IMAGE = "../video/limpio01.png" #modified from left_lane_#
 
-IMAGE_DIR = "../results/images_1"
+IMAGE_DIR = "../results/images_0.01_nf"
 IMAGE_FILENAME_FORMAT = IMAGE_DIR + "/frame_%04d.png"
 
 # Define the codec and create VideoWriter object
@@ -36,7 +36,7 @@ IMAGE_FILENAME_FORMAT = IMAGE_DIR + "/frame_%04d.png"
 #out = cv2.VideoWriter(OUTPUT_VIDEO_NAME,fourcc, 16.0, (int(frame_width),int(frame_height)))
 
 # Time to wait between frames, 0=forever
-WAIT_TIME = 2 # 250 # ms
+WAIT_TIME = 1 # 250 # ms
 
 # COLORS
 DIVIDER_COLOUR = (0, 255, 0)
@@ -57,7 +57,7 @@ def main():
 
 
     #Creating background subtractor...
-    bg_subtractor = cv2.bgsegm.createBackgroundSubtractorMOG()
+    bg_subtractor = cv2.createBackgroundSubtractorMOG2()
     
 
     #WARNING Pre-training the background subtractor...
@@ -94,14 +94,17 @@ def main():
                     bg_subtractor, car_counter, counter_line_Y, 
                     DIVIDER_COLOUR, BOUNDING_BOX_COLOUR, 
                     CENTROID_COLOUR, IMAGE_DIR)
-        #if frame_number == 100: break
+        #if frame_number == 200: break
         #Saving processed frame
-        if frame_number > 100 * frame_counter: #and frame_number < 100 * (1 + frame_counter):
+        #if frame_number > 50 + 100 * frame_counter: #and frame_number < 100 * (1 + frame_counter):
         #    save_frame(IMAGE_DIR + "/processed_%04d.png"
-         #   , frame_number, processed, "processed frame #%d")
-          #  if frame_number > 100 * (1 + frame_counter):
-           #     frame_counter += 10
-            pass
+        #    , frame_number, processed, "processed frame #%d")
+        #    if frame_number > 100 * (1 + frame_counter):
+        #        frame_counter += 10
+        #else:
+        #    save_frame(IMAGE_DIR + "/processed_%04d.png"
+        #    , frame_number, processed, "processed frame #%d")
+           # pass
         #Writing Output Video
         #out.write(processed)
 
@@ -132,3 +135,4 @@ if __name__ == "__main__":
         os.makedirs(IMAGE_DIR)
 
     main()
+    print
